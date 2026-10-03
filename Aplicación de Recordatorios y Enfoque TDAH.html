@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enfoque & Recordatorios TDAH</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tdah: {
+                            bg: '#F8FAFC',
+                            card: '#FFFFFF',
+                            primary: '#6366F1',
+                            secondary: '#EC4899',
+                            success: '#10B981',
+                            warning: '#F59E0B',
+                            accent: '#8B5CF6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar and smooth transitions */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Header Navbar -->
+    <header class="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-8">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+                    <i class="fa-solid fa-brain text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        Focus Mind TDAH
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Recordatorios & Enfoque Sin Estrés</p>
+                </div>
+            </div>
+
+            <!-- Header Controls: Permissions, Theme Toggle, Streaks -->
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- Streak Badge -->
+                <div class="flex items-center space-x-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm" title="Días seguidos cumpliendo tareas">
+                    <i class="fa-solid fa-fire text-amber-500 text-sm animate-bounce"></i>
+                    <span id="streakCount">0</span> <span class="hidden sm:inline">días racha</span>
+                </div>
+
+                <!-- Points / Dopamine Points Badge -->
+                <div class="flex items-center space-x-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm" title="Puntos acumulados">
+                    <i class="fa-solid fa-star text-emerald-500 text-sm"></i>
+                    <span id="pointsCount">0</span> <span class="hidden sm:inline">pts</span>
+                </div>
+
+                <!-- Dark Mode Toggle Button -->
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Cambiar Tema">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6 sm:px-8 space-y-6">
+
+        <!-- Banner de Estado de Permisos y Notificaciones -->
+        <div id="permissionBanner" class="hidden bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-2xl p-4 sm:p-5 shadow-sm transition-all">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-start space-x-3">
+                    <div class="p-2.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl mt-0.5">
+                        <i class="fa-solid fa-bell-ring text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
+                            ¡Activa las Notificaciones y Permisos!
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                            Para no olvidar tus tareas, necesitamos permiso para enviarte alertas directas al dispositivo.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button onclick="requestNotificationPermission()" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs sm:text-sm rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-check-double"></i>
+                        <span>Activar Alertas</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner de Confirmación de Almacenamiento Local (LocalStorage) -->
+        <div id="storageStatusBanner" class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-3 px-4 flex items-center justify-between text-xs sm:text-sm text-emerald-800 dark:text-emerald-300">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield-check text-emerald-600 dark:text-emerald-400"></i>
+                <span><strong>Almacenamiento Seguro Activo:</strong> Tus datos e imágenes quedan guardados únicamente en este navegador localmente.</span>
+            </div>
+            <span class="text-xs bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-md font-mono hidden md:inline-block">LocalStorage</span>
+        </div>
+
+        <!-- Dashboard Grid: Timer Pomodoro ADHD + Agregar Tarea -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Columna Izquierda: Temporizador de Enfoque Corto (Micro-Pomodoro) -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-700/60 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-stopwatch text-indigo-500 text-lg"></i>
+                            <h2 class="font-bold text-slate-800 dark:text-slate-100">Bloque de Enfoque Corto</h2>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium">Antiparálisis TDAH</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                        Elige un tiempo breve. La regla de los 5 minutos ayuda a romper la parálisis inicial de la tarea.
+                    </p>
+
+                    <!-- Timer Display -->
+                    <div class="text-center py-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 mb-5 relative overflow-hidden">
+                        <div id="timerDisplay" class="text-4xl sm:text-5xl font-black font-mono tracking-tight text-indigo-600 dark:text-indigo-400">
+                            15:00
+                        </div>
+                        <span id="timerStatusLabel" class="text-xs text-slate-400 mt-1 block">Listo para empezar</span>
+                    </div>
+
+                    <!-- Botones Preconfigurados de Tiempo Corto -->
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <button onclick="setTimerMinutes(5)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition border border-transparent hover:border-indigo-200">
+                            ⚡ 5 min
+                        </button>
+                        <button onclick="setTimerMinutes(15)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition border border-transparent hover:border-indigo-200">
+                            🎯 15 min
+                        </button>
+                        <button onclick="setTimerMinutes(25)" class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition border border-transparent hover:border-indigo-200">
+                            🔥 25 min
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timer Controls -->
+                <div class="flex space-x-2">
+                    <button id="startTimerBtn" onclick="toggleTimer()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                        <i id="timerBtnIcon" class="fa-solid fa-play"></i>
+                        <span id="timerBtnText">Iniciar Enfoque</span>
+                    </button>
+                    <button onclick="resetTimer()" class="px-3.5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-xl transition" title="Reiniciar">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columna Derecha / Central: Crear Nuevo Recordatorio -->
+            <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-700/60">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-plus text-indigo-500 text-lg"></i>
+                        <h2 class="font-bold text-slate-800 dark:text-slate-100">Nuevo Recordatorio Visible</h2>
+                    </div>
+                    <span class="text-xs text-slate-400">Paso a paso fácil</span>
+                </div>
+
+                <form id="reminderForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Título -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                ¿Qué necesitas recordar hacer? <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="taskTitle" required placeholder="Ej: Tomar medicina, Beber agua, Pagar servicio..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm dark:text-white transition">
+                        </div>
+
+                        <!-- Fecha y Hora -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                ¿A qué hora avisarte? <span class="text-red-500">*</span>
+                            </label>
+                            <input type="datetime-local" id="taskDateTime" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm dark:text-white transition">
+                        </div>
+
+                        <!-- Categoría -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                Categoría
+                            </label>
+                            <select id="taskCategory" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm dark:text-white transition">
+                                <option value="Rutina">🔁 Rutina Diaria</option>
+                                <option value="Salud">💊 Salud / Bienestar</option>
+                                <option value="Trabajo">💻 Trabajo / Estudio</option>
+                                <option value="Personal">🏡 Personal / Casa</option>
+                            </select>
+                        </div>
+
+                        <!-- Prioridad -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                Nivel de Urgencia
+                            </label>
+                            <select id="taskPriority" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm dark:text-white transition">
+                                <option value="Baja">🟡 Normal / Cuando pueda</option>
+                                <option value="Media" selected>🟠 Importante</option>
+                                <option value="Alta">🔴 Urgente / Prioridad Alta</option>
+                            </select>
+                        </div>
+
+                        <!-- Cargar Foto Adjunta -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                Foto/Pista Visual (Opcional TDAH)
+                            </label>
+                            <div class="relative">
+                                <input type="file" id="taskImageInput" accept="image/*" onchange="previewImage(event)" class="hidden">
+                                <label for="taskImageInput" class="flex items-center justify-center space-x-2 px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer text-xs text-slate-600 dark:text-slate-300 transition w-full">
+                                    <i class="fa-solid fa-camera text-indigo-500"></i>
+                                    <span id="fileNamePreview">Subir o tomar foto</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Previsualización de Imagen opcional -->
+                    <div id="imagePreviewContainer" class="hidden relative w-full h-28 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 mt-2">
+                        <img id="imagePreview" src="" alt="Previsualización" class="w-full h-full object-cover">
+                        <button type="button" onclick="removeSelectedImage()" class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 w-6 h-6 flex items-center justify-center text-xs shadow hover:bg-red-700">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Botón Guardar -->
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-bell"></i>
+                            <span>Guardar Recordatorio</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Listado de Recordatorios con Filtros -->
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check text-indigo-500"></i>
+                    <h2 class="font-bold text-slate-800 dark:text-slate-100 text-lg">Mis Recordatorios Activos</h2>
+                </div>
+
+                <!-- Filtros TDAH -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="filterReminders('all')" id="filterBtnAll" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white">
+                        Todos
+                    </button>
+                    <button onclick="filterReminders('pending')" id="filterBtnPending" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300">
+                        Pendientes
+                    </button>
+                    <button onclick="filterReminders('completed')" id="filterBtnCompleted" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300">
+                        Completados
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid de Tarjetas de Recordatorio -->
+            <div id="remindersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Se cargan dinámicamente con JavaScript -->
+            </div>
+
+            <!-- Estado Vacío (Empty State) -->
+            <div id="emptyState" class="hidden text-center py-12 px-4 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                <div class="w-16 h-16 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-sparkles text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">¡Sin pendientes en la vista!</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    Tu mente está despejada. Agrega un recordatorio con la hora exacta o descansa un rato.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Toast / Alarm Modal UI -->
+    <div id="alarmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-indigo-100 dark:border-indigo-900 pulse-ring">
+            <div class="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-bounce">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">¡Es Hora del Recordatorio!</h3>
+            <p id="alarmModalTitle" class="text-base text-indigo-600 dark:text-indigo-400 font-semibold mb-4">Título de la tarea</p>
+            
+            <div id="alarmImageContainer" class="hidden mb-4 rounded-xl overflow-hidden h-36 bg-slate-100 border border-slate-200">
+                <img id="alarmModalImage" src="" class="w-full h-full object-cover">
+            </div>
+
+            <button onclick="dismissAlarmModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg transition">
+                ¡Entendido / Marcar Hecho! 🎉
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* State Variables */
+        let reminders = [];
+        let currentFilter = 'all';
+        let currentImageDataBase64 = null;
+        let points = 0;
+        let streak = 0;
+        let activeTimerInterval = null;
+        let timerSecondsLeft = 15 * 60;
+        let isTimerRunning = false;
+
+        /* Web Audio API Alarm Sound Generator (Synthesizer without external files) */
+        function playSynthesizedAlarm() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                const playBeep = (freq, time, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime + time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + time);
+                    osc.stop(ctx.currentTime + time + duration);
+                };
+
+                // Play a friendly chime sequence
+                playBeep(523.25, 0, 0.2);   // C5
+                playBeep(659.25, 0.25, 0.2); // E5
+                playBeep(783.99, 0.5, 0.3);  // G5
+                playBeep(1046.50, 0.8, 0.5); // C6
+            } catch (e) {
+                console.error("Audio Web API error:", e);
+            }
+        }
+
+        // Load data on window load
+        window.onload = function() {
+            loadFromLocalStorage();
+            checkNotificationStatus();
+            renderReminders();
+            updateStatsUI();
+
+            // Interval to check due alarms every minute
+            setInterval(checkDueReminders, 30000); // every 30 seconds
+            
+            // Set default datetime to now + 30 mins
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 30);
+            document.getElementById('taskDateTime').value = now.toISOString().slice(0, 16);
+        };
+
+        function loadFromLocalStorage() {
+            try {
+                const savedReminders = localStorage.getItem('tdah_reminders');
+                if (savedReminders) reminders = JSON.parse(savedReminders);
+
+                const savedPoints = localStorage.getItem('tdah_points');
+                if (savedPoints) points = parseInt(savedPoints, 10);
+
+                const savedStreak = localStorage.getItem('tdah_streak');
+                if (savedStreak) streak = parseInt(savedStreak, 10);
+            } catch (e) {
+                console.error("Error reading LocalStorage", e);
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('tdah_reminders', JSON.stringify(reminders));
+                localStorage.setItem('tdah_points', points.toString());
+                localStorage.setItem('tdah_streak', streak.toString());
+            } catch (e) {
+                console.error("Error saving to LocalStorage", e);
+            }
+        }
+
+        function checkNotificationStatus() {
+            const banner = document.getElementById('permissionBanner');
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        document.getElementById('permissionBanner').classList.add('hidden');
+                        showNotification('¡Notificaciones Activadas!', 'Te avisaremos a la hora de tus recordatorios.');
+                    }
+                });
+            } else {
+                alert('Tu navegador no soporta notificaciones de escritorio.');
+            }
+        }
+
+        function showNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/3239/3239952.png'
+                });
+            }
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 3 * 1024 * 1024) {
+                    alert('Por favor selecciona una imagen menor a 3MB');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImageDataBase64 = e.target.result;
+                    document.getElementById('imagePreview').src = currentImageDataBase64;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                    document.getElementById('fileNamePreview').innerText = file.name.substring(0, 15) + '...';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeSelectedImage() {
+            currentImageDataBase64 = null;
+            document.getElementById('taskImageInput').value = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('fileNamePreview').innerText = 'Subir o tomar foto';
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('taskTitle').value.trim();
+            const datetime = document.getElementById('taskDateTime').value;
+            const category = document.getElementById('taskCategory').value;
+            const priority = document.getElementById('taskPriority').value;
+
+            if (!title || !datetime) return;
+
+            const newReminder = {
+                id: Date.now().toString(),
+                title: title,
+                datetime: datetime,
+                category: category,
+                priority: priority,
+                image: currentImageDataBase64,
+                completed: false,
+                notified: false,
+                createdAt: new Date().toISOString()
+            };
+
+            reminders.unshift(newReminder);
+            saveToLocalStorage();
+            renderReminders();
+
+            // Reset Form
+            document.getElementById('reminderForm').reset();
+            removeSelectedImage();
+
+            // Default time again
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 30);
+            document.getElementById('taskDateTime').value = now.toISOString().slice(0, 16);
+        }
+
+        function renderReminders() {
+            const grid = document.getElementById('remindersGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            let filtered = reminders.filter(r => {
+                if (currentFilter === 'pending') return !r.completed;
+                if (currentFilter === 'completed') return r.completed;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(r => {
+                const dateObj = new Date(r.datetime);
+                const formattedDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                const formattedTime = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+                // Priority Badge Colors
+                let priorityClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300';
+                if (r.priority === 'Alta') priorityClass = 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300';
+                if (r.priority === 'Baja') priorityClass = 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300';
+
+                // Category Icons
+                let catIcon = 'fa-tag';
+                if (r.category === 'Salud') catIcon = 'fa-capsules';
+                if (r.category === 'Rutina') catIcon = 'fa-rotate';
+                if (r.category === 'Trabajo') catIcon = 'fa-laptop-code';
+                if (r.category === 'Personal') catIcon = 'fa-house-user';
+
+                const card = document.createElement('div');
+                card.className = `bg-white dark:bg-slate-800 rounded-2xl border ${r.completed ? 'opacity-60 border-slate-200 dark:border-slate-700' : 'border-slate-200 dark:border-slate-700/80'} p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between relative overflow-hidden`;
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Header Card -->
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${priorityClass}">
+                                ${r.priority}
+                            </span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                <i class="fa-solid ${catIcon}"></i> ${r.category}
+                            </span>
+                        </div>
+
+                        <!-- Title -->
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base mb-2 ${r.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}">
+                            ${escapeHtml(r.title)}
+                        </h3>
+
+                        <!-- Image Preview if available -->
+                        ${r.image ? `
+                            <div class="mb-3 rounded-xl overflow-hidden h-32 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                                <img src="${r.image}" class="w-full h-full object-cover">
+                            </div>
+                        ` : ''}
+
+                        <!-- Date Time Badge -->
+                        <div class="flex items-center space-x-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl w-fit mb-3">
+                            <i class="fa-regular fa-clock"></i>
+                            <span>${formattedDate} - ${formattedTime}</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                        <button onclick="toggleCompleteReminder('${r.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${r.completed ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 hover:bg-emerald-500 hover:text-white text-slate-600 dark:text-slate-300'}">
+                            <i class="fa-solid ${r.completed ? 'fa-circle-check' : 'fa-circle'}"></i>
+                            <span>${r.completed ? 'Completado' : 'Marcar Hecho'}</span>
+                        </button>
+
+                        <button onclick="deleteReminder('${r.id}')" class="p-2 text-slate-400 hover:text-red-500 transition" title="Eliminar">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function filterReminders(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300';
+            });
+
+            if (filter === 'all') document.getElementById('filterBtnAll').className = 'filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white';
+            if (filter === 'pending') document.getElementById('filterBtnPending').className = 'filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white';
+            if (filter === 'completed') document.getElementById('filterBtnCompleted').className = 'filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white';
+
+            renderReminders();
+        }
+
+        function toggleCompleteReminder(id) {
+            const index = reminders.findIndex(r => r.id === id);
+            if (index !== -1) {
+                reminders[index].completed = !reminders[index].completed;
+
+                // Trigger Dopamine Reward if completing!
+                if (reminders[index].completed) {
+                    points += 15;
+                    streak += 1;
+                    triggerConfetti();
+                    playSynthesizedAlarm();
+                } else {
+                    points = Math.max(0, points - 15);
+                }
+
+                saveToLocalStorage();
+                updateStatsUI();
+                renderReminders();
+            }
+        }
+
+        function deleteReminder(id) {
+            reminders = reminders.filter(r => r.id !== id);
+            saveToLocalStorage();
+            renderReminders();
+        }
+
+        function updateStatsUI() {
+            document.getElementById('pointsCount').innerText = points;
+            document.getElementById('streakCount').innerText = streak;
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function checkDueReminders() {
+            const now = new Date();
+            reminders.forEach(r => {
+                if (!r.completed && !r.notified) {
+                    const taskTime = new Date(r.datetime);
+                    // Check if time is past or present within 1 minute
+                    if (now >= taskTime) {
+                        r.notified = true;
+                        saveToLocalStorage();
+
+                        // Fire Web Alarm Sound & Notification
+                        playSynthesizedAlarm();
+                        showNotification('⏰ Recordatorio TDAH: ' + r.title, 'Es hora de: ' + r.title);
+                        showAlarmModal(r);
+                    }
+                }
+            });
+        }
+
+        let activeAlarmReminderId = null;
+        function showAlarmModal(reminder) {
+            activeAlarmReminderId = reminder.id;
+            document.getElementById('alarmModalTitle').innerText = reminder.title;
+            const imgContainer = document.getElementById('alarmImageContainer');
+            const img = document.getElementById('alarmModalImage');
+
+            if (reminder.image) {
+                img.src = reminder.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            document.getElementById('alarmModal').classList.remove('hidden');
+        }
+
+        function dismissAlarmModal() {
+            document.getElementById('alarmModal').classList.add('hidden');
+            if (activeAlarmReminderId) {
+                toggleCompleteReminder(activeAlarmReminderId);
+                activeAlarmReminderId = null;
+            }
+        }
+
+        function setTimerMinutes(mins) {
+            resetTimer();
+            timerSecondsLeft = mins * 60;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSecondsLeft / 60);
+            const secs = timerSecondsLeft % 60;
+            document.getElementById('timerDisplay').innerText = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            if (isTimerRunning) {
+                // Pause
+                clearInterval(activeTimerInterval);
+                isTimerRunning = false;
+                document.getElementById('timerBtnIcon').className = 'fa-solid fa-play';
+                document.getElementById('timerBtnText').innerText = 'Continuar';
+                document.getElementById('timerStatusLabel').innerText = 'Pausado';
+            } else {
+                // Start
+                isTimerRunning = true;
+                document.getElementById('timerBtnIcon').className = 'fa-solid fa-pause';
+                document.getElementById('timerBtnText').innerText = 'Pausar';
+                document.getElementById('timerStatusLabel').innerText = '¡Enfocado en la tarea!';
+
+                activeTimerInterval = setInterval(() => {
+                    if (timerSecondsLeft > 0) {
+                        timerSecondsLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(activeTimerInterval);
+                        isTimerRunning = false;
+                        playSynthesizedAlarm();
+                        triggerConfetti();
+                        points += 25;
+                        updateStatsUI();
+                        saveToLocalStorage();
+                        alert('¡Gran trabajo de enfoque! Te has ganado +25 puntos de dopamina 🎉');
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(activeTimerInterval);
+            isTimerRunning = false;
+            timerSecondsLeft = 15 * 60;
+            updateTimerDisplay();
+            document.getElementById('timerBtnIcon').className = 'fa-solid fa-play';
+            document.getElementById('timerBtnText').innerText = 'Iniciar Enfoque';
+            document.getElementById('timerStatusLabel').innerText = 'Listo para empezar';
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-moon';
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-sun';
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
